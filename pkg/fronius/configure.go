@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	u "sbam/src/utils"
+	"sbam/src/utils/mqttclient"
 
 	"github.com/simonvetter/modbus"
 )
@@ -38,8 +39,13 @@ func WriteFroniusModbusRegisters(modbusStorageCfg map[uint16]int16) error {
 
 	for r, v := range modbusStorageCfg {
 		u.Log.Debugf("Writing register: %d ; value: %v", r, uint16(v))
-		err = modbusClient.WriteRegister(r-1, uint16(v))
+		err := modbusClient.WriteRegister(r-1, uint16(v))
 		handleErrorPanic(err, "Error Writing register "+fmt.Sprintf("%d", r)+", value: "+fmt.Sprintf("%d", v))
+		
+        // ✅ Publish to MQTT
+        topic := fmt.Sprintf("sbam/fronius/registers/%d", r)
+        mqttclient.PublishNumber(topic, int(v))
+
 
 	}
 	return nil
@@ -85,13 +91,15 @@ func ForceCharge(modbus_ip string, power_prc int16, port ...string) error {
 		p = port[0]
 	}
 	u.Log.Infof("Setting Fronius Storage Force Charge at %d%%", power_prc)
+	mqttclient.Publish("sbam/fronius/force_charge", fmt.Sprintf("%d", power_prc))
+
 	if power_prc > 0 {
 		regList := copyMap(mdsc)
 
 		regList[StorCtl_Mod] = 2 // Limit Decharging
 		regList[OutWRte] = -100 * power_prc
 
-		err = Connectmodbus(modbus_ip, regList, p)
+		err := Connectmodbus(modbus_ip, regList, p)
 		if err != nil {
 			u.Log.Errorf("Something goes wrong %s", err)
 			return err
@@ -99,17 +107,18 @@ func ForceCharge(modbus_ip string, power_prc int16, port ...string) error {
 
 	} else if power_prc == 0 {
 		u.Log.Info("percent of charging is <1%, skipping Force Charge and set defaults.")
-		err = Setdefaults(modbus_ip, p)
+		err := Setdefaults(modbus_ip, p)
 		if err != nil {
 			u.Log.Errorln("Error Setting Defaults: %s ", err)
 			return err
 		}
 	} else {
-		err = errors.New("percent of charging is negative")
+		err := errors.New("percent of charging is negative")
 		u.Log.Errorf("someting goes wrong when force charging, %s", err)
 		return err
 	}
 	u.Log.Info("Setting Fronius Storage Force Charge done.")
+	mqttclient.PublishNumber("sbam/fronius/status", 1)
 	return nil
 }
 
@@ -118,7 +127,7 @@ func Connectmodbus(url string, regList map[uint16]int16, port ...string) error {
 	if len(port) > 0 {
 		p = port[0]
 	}
-	err = OpenModbusClient("tcp", url, p)
+	err := OpenModbusClient("tcp", url, p)
 	if err != nil {
 		u.Log.Errorf("Something goes wrong %s", err)
 		return err

@@ -19,6 +19,8 @@ export DEBUG=$(bashio::config 'debug')
 export CACHE_FORECAST=$(bashio::config 'cache_forecast')
 export CACHE_FILE_PREFIX=$(bashio::config 'cache_file_prefix')
 export CACHE_TIME=$(bashio::config 'cache_time')
+export MQTT_USERNAME=$(bashio::config 'mqtt_username')
+export MQTT_PASSWORD=$(bashio::config 'mqtt_password')
 
 [ "$RESET" = "true" ] && sbam configure -d
 

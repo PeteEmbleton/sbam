@@ -5,8 +5,9 @@
   "init": "false",
   "description": "Smart Battery Advanced Manager",
   "arch": ["amd64", "i386", "armv7", "aarch64"],
-  "url": "https://github.com/atbore-phx/sbam",
+  "url": "https://github.com/PeteEmbleton/sbam",
   "image": "ghcr.io/atbore-phx/ha-{arch}-sbam",
+  "host_network": true,
   "options": {
     "url": "https://api.solcast.com.au/rooftop_sites/<YOUR-SITE>/forecasts?format=json",
     "apikey": "",
@@ -26,7 +27,9 @@
     "debug": false,
     "cache_forecast": false,
     "cache_time": 7200,
-    "cache_file_prefix": "cached_forecast"
+    "cache_file_prefix": "cached_forecast",
+    "mqtt_username": "",
+    "mqtt_password": ""
   },
   "schema": {
     "url": "str",
@@ -47,6 +50,8 @@
     "debug": "bool",
     "cache_forecast": "bool",
     "cache_time": "int",
-    "cache_file_prefix": "str"
+    "cache_file_prefix": "str",
+    "mqtt_username": "str",
+    "mqtt_password": "str"
   }
 }
